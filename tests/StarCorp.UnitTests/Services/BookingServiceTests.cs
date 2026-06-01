@@ -90,7 +90,7 @@ public class BookingServiceTests
 
         var booking = new Booking(42, 1, 1, FareClass.Economica, BookingStatus.Pending, 1, 500m, 500m, 85m, 29.25m, 614.25m, DateTime.UtcNow);
         _bookings.GetAggregateAsync(42, Arg.Any<CancellationToken>())
-            .Returns(new BookingAggregate(booking, SampleFlight(), [new BookingPassenger(1, 42, "Ana", "111")], null, null));
+            .Returns(new BookingAggregate(booking, SampleFlight(), [new BookingPassenger(1, 42, "Ana", "111")], null));
 
         var result = await _sut.CreateAsync(ValidRequest(), CancellationToken.None);
 
@@ -106,11 +106,23 @@ public class BookingServiceTests
         var booking = new Booking(7, 1, 1, FareClass.Economica, BookingStatus.Paid, 1, 500m, 500m, 85m, 29.25m, 614.25m, DateTime.UtcNow);
         var payment = new Payment(1, 7, PaymentMethod.Pix, -30.71m, 583.54m, DateTime.UtcNow);
         _bookings.GetAggregateAsync(7, Arg.Any<CancellationToken>())
-            .Returns(new BookingAggregate(booking, SampleFlight(), [], payment, null));
+            .Returns(new BookingAggregate(booking, SampleFlight(), [], payment));
 
         var result = await _sut.PayAsync(7, new PaymentRequest(PaymentMethod.CreditCard), CancellationToken.None);
 
         Assert.Null(result);
         Assert.Equal(NotificationType.Conflict, _notifications.Type);
+    }
+
+    [Fact]
+    public async Task CreateAsync_Should_NotFound_When_Flight_Missing()
+    {
+        _customers.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(ActiveCustomer());
+        _flights.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns((Flight?)null);
+
+        var result = await _sut.CreateAsync(ValidRequest(), CancellationToken.None);
+
+        Assert.Null(result);
+        Assert.Equal(NotificationType.NotFound, _notifications.Type);
     }
 }

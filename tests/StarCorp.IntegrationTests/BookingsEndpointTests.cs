@@ -106,4 +106,75 @@ public class BookingsEndpointTests(ApiFactory factory)
         var secondPayment = await client.PostAsJsonAsync($"/api/bookings/{booking.Id}/payment", new PaymentRequest(PaymentMethod.Boleto), TestJson.Options);
         Assert.Equal(HttpStatusCode.Conflict, secondPayment.StatusCode);
     }
+
+    [Fact]
+    public async Task Pay_Should_Return_404_For_Unknown_Booking()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/bookings/999999999/payment", new PaymentRequest(PaymentMethod.Pix), TestJson.Options);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancel_Should_Return_404_For_Unknown_Booking()
+    {
+        var client = _factory.CreateClient();
+
+        var response = await client.PostAsync("/api/bookings/999999999/cancel", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pay_On_Cancelled_Booking_Should_Return_409()
+    {
+        var client = _factory.CreateClient();
+        var customerId = await TestData.InsertCustomerAsync(_factory.ConnectionString);
+        var flightId = await TestData.InsertFlightAsync(_factory.ConnectionString, basePrice: 500m);
+
+        var create = await client.PostAsJsonAsync("/api/bookings", BookingFor(customerId, flightId), TestJson.Options);
+        var booking = await create.Content.ReadFromJsonAsync<BookingResponseDto>(TestJson.Options);
+
+        var cancel = await client.PostAsync($"/api/bookings/{booking!.Id}/cancel", null);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+
+        var pay = await client.PostAsJsonAsync($"/api/bookings/{booking.Id}/payment", new PaymentRequest(PaymentMethod.Pix), TestJson.Options);
+        Assert.Equal(HttpStatusCode.Conflict, pay.StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancel_Unpaid_Booking_Should_Refund_Zero()
+    {
+        var client = _factory.CreateClient();
+        var customerId = await TestData.InsertCustomerAsync(_factory.ConnectionString);
+        var flightId = await TestData.InsertFlightAsync(_factory.ConnectionString, basePrice: 500m);
+
+        var create = await client.PostAsJsonAsync("/api/bookings", BookingFor(customerId, flightId), TestJson.Options);
+        var booking = await create.Content.ReadFromJsonAsync<BookingResponseDto>(TestJson.Options);
+
+        var cancel = await client.PostAsync($"/api/bookings/{booking!.Id}/cancel", null);
+        Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
+        var refund = await cancel.Content.ReadFromJsonAsync<CancellationResponseDto>(TestJson.Options);
+        Assert.Equal(0m, refund!.RefundPercentage);
+        Assert.Equal(0m, refund.RefundAmount);
+    }
+
+    [Fact]
+    public async Task Cancel_Twice_Should_Return_409()
+    {
+        var client = _factory.CreateClient();
+        var customerId = await TestData.InsertCustomerAsync(_factory.ConnectionString);
+        var flightId = await TestData.InsertFlightAsync(_factory.ConnectionString, basePrice: 500m);
+
+        var create = await client.PostAsJsonAsync("/api/bookings", BookingFor(customerId, flightId), TestJson.Options);
+        var booking = await create.Content.ReadFromJsonAsync<BookingResponseDto>(TestJson.Options);
+
+        var first = await client.PostAsync($"/api/bookings/{booking!.Id}/cancel", null);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await client.PostAsync($"/api/bookings/{booking.Id}/cancel", null);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
 }
