@@ -1,5 +1,5 @@
 using StarCorp.Business.Dtos;
-using StarCorp.Data.Pagination;
+using StarCorp.Business.Pagination;
 
 namespace StarCorp.Business.Services.Abstractions;
 

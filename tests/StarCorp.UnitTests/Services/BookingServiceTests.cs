@@ -5,11 +5,11 @@ using StarCorp.Business.Notifications.Abstractions;
 using StarCorp.Business.Pricing;
 using StarCorp.Business.Services;
 using StarCorp.Business.Validators;
-using StarCorp.Data.Entities;
-using StarCorp.Data.Enums;
-using StarCorp.Data.Queries;
-using StarCorp.Data.Repositories;
-using StarCorp.Data.Repositories.Abstractions;
+using StarCorp.Business.Entities;
+using StarCorp.Business.Enums;
+using StarCorp.Business.Queries;
+using StarCorp.Business.Repositories;
+using StarCorp.Business.Repositories.Abstractions;
 
 namespace StarCorp.UnitTests.Services;
 

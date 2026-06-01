@@ -1,4 +1,4 @@
-namespace StarCorp.Data.Enums;
+namespace StarCorp.Business.Enums;
 
 public enum PaymentMethod : byte
 {

@@ -1,6 +1,6 @@
-using StarCorp.Data.Enums;
+using StarCorp.Business.Enums;
 
-namespace StarCorp.Data.Queries;
+namespace StarCorp.Business.Queries;
 
 public record FlightOfferRow(
     int FlightId,

@@ -1,5 +1,5 @@
 using StarCorp.Business.Pricing;
-using StarCorp.Data.Enums;
+using StarCorp.Business.Enums;
 
 namespace StarCorp.UnitTests.Pricing;
 

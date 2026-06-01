@@ -1,4 +1,4 @@
-namespace StarCorp.Data.Entities;
+namespace StarCorp.Business.Entities;
 
 public record Flight(
     int Id,

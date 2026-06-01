@@ -1,5 +1,5 @@
-using StarCorp.Data.Enums;
+using StarCorp.Business.Enums;
 
-namespace StarCorp.Data.Entities;
+namespace StarCorp.Business.Entities;
 
 public record FareClassInfo(FareClass Id, string Name, decimal PriceMultiplier);

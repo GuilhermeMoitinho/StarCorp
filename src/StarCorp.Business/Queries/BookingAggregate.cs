@@ -1,6 +1,6 @@
-using StarCorp.Data.Entities;
+using StarCorp.Business.Entities;
 
-namespace StarCorp.Data.Queries;
+namespace StarCorp.Business.Queries;
 
 public record BookingAggregate(
     Booking Booking,

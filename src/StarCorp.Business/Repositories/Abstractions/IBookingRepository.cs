@@ -1,7 +1,7 @@
-using StarCorp.Data.Entities;
-using StarCorp.Data.Queries;
+using StarCorp.Business.Entities;
+using StarCorp.Business.Queries;
 
-namespace StarCorp.Data.Repositories.Abstractions;
+namespace StarCorp.Business.Repositories.Abstractions;
 
 public interface IBookingRepository
 {

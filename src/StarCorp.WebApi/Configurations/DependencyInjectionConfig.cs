@@ -8,7 +8,7 @@ using StarCorp.Business.Services;
 using StarCorp.Business.Services.Abstractions;
 using StarCorp.Business.Validators;
 using StarCorp.Data.Repositories;
-using StarCorp.Data.Repositories.Abstractions;
+using StarCorp.Business.Repositories.Abstractions;
 
 namespace StarCorp.WebApi.Configurations;
 

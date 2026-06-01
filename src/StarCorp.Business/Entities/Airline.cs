@@ -1,3 +1,3 @@
-namespace StarCorp.Data.Entities;
+namespace StarCorp.Business.Entities;
 
 public record Airline(int Id, string Name, string IataCode);

@@ -1,4 +1,4 @@
-namespace StarCorp.Data.Pagination;
+namespace StarCorp.Business.Pagination;
 
 public record PageQuery(int Page = 1, int PageSize = 10)
 {

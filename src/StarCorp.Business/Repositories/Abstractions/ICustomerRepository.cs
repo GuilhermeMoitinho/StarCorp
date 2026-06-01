@@ -1,6 +1,6 @@
-using StarCorp.Data.Entities;
+using StarCorp.Business.Entities;
 
-namespace StarCorp.Data.Repositories.Abstractions;
+namespace StarCorp.Business.Repositories.Abstractions;
 
 public interface ICustomerRepository
 {

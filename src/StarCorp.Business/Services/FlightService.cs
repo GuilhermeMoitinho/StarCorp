@@ -1,10 +1,11 @@
 using FluentValidation;
 using StarCorp.Business.Dtos;
+using StarCorp.Business.Notifications;
 using StarCorp.Business.Notifications.Abstractions;
+using StarCorp.Business.Pagination;
+using StarCorp.Business.Queries;
+using StarCorp.Business.Repositories.Abstractions;
 using StarCorp.Business.Services.Abstractions;
-using StarCorp.Data.Pagination;
-using StarCorp.Data.Queries;
-using StarCorp.Data.Repositories.Abstractions;
 
 namespace StarCorp.Business.Services;
 
@@ -15,13 +16,8 @@ public sealed class FlightService(
 {
     public async Task<PagedResult<FlightOfferDto>?> SearchAsync(FlightSearchRequest request, CancellationToken ct)
     {
-        var validation = await validator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-        {
-            foreach (var error in validation.Errors)
-                notifications.AddNotification(error.PropertyName, error.ErrorMessage);
+        if (!await notifications.EnsureValidAsync(validator, request, ct))
             return null;
-        }
 
         var criteria = new FlightSearchCriteria(
             Normalize(request.OriginCity),

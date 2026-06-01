@@ -1,6 +1,6 @@
-using StarCorp.Data.Enums;
+using StarCorp.Business.Enums;
 
-namespace StarCorp.Data.Repositories;
+namespace StarCorp.Business.Repositories;
 
 public record NewBooking(
     int CustomerId,

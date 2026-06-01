@@ -1,9 +1,9 @@
 using Dapper;
 using StarCorp.Data.Connection;
-using StarCorp.Data.Entities;
-using StarCorp.Data.Pagination;
-using StarCorp.Data.Queries;
-using StarCorp.Data.Repositories.Abstractions;
+using StarCorp.Business.Entities;
+using StarCorp.Business.Pagination;
+using StarCorp.Business.Queries;
+using StarCorp.Business.Repositories.Abstractions;
 
 namespace StarCorp.Data.Repositories;
 

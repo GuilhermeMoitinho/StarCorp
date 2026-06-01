@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using StarCorp.Business.Dtos;
-using StarCorp.Data.Enums;
-using StarCorp.Data.Pagination;
+using StarCorp.Business.Enums;
+using StarCorp.Business.Pagination;
 
 namespace StarCorp.IntegrationTests;
 

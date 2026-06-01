@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using StarCorp.Business.Dtos;
 using StarCorp.Business.Notifications.Abstractions;
 using StarCorp.Business.Services.Abstractions;
-using StarCorp.Data.Pagination;
+using StarCorp.Business.Pagination;
 using StarCorp.WebApi.Abstractions;
 
 namespace StarCorp.WebApi.Controllers;

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using StarCorp.Business.Dtos;
-using StarCorp.Data.Enums;
+using StarCorp.Business.Enums;
 
 namespace StarCorp.IntegrationTests;
 

@@ -1,6 +1,6 @@
-using StarCorp.Data.Enums;
+using StarCorp.Business.Enums;
 
-namespace StarCorp.Data.Entities;
+namespace StarCorp.Business.Entities;
 
 public record Payment(
     int Id,
