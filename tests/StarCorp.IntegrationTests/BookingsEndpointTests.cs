@@ -21,27 +21,23 @@ public class BookingsEndpointTests(ApiFactory factory)
         var customerId = await TestData.InsertCustomerAsync(_factory.ConnectionString);
         var flightId = await TestData.InsertFlightAsync(_factory.ConnectionString, basePrice: 1000m);
 
-        // criar
         var create = await client.PostAsJsonAsync("/api/bookings", BookingFor(customerId, flightId), TestJson.Options);
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         var booking = await create.Content.ReadFromJsonAsync<BookingResponseDto>(TestJson.Options);
         Assert.NotNull(booking);
         Assert.Equal(BookingStatus.Pending, booking!.Status);
-        Assert.Equal(1181.25m, booking.Breakdown.AmountDue); // base 1000, 1 pax: 1000 + 125 + 56.25
+        Assert.Equal(1181.25m, booking.Breakdown.AmountDue);
 
-        // pagar com Pix (-5%)
         var pay = await client.PostAsJsonAsync($"/api/bookings/{booking.Id}/payment", new PaymentRequest(PaymentMethod.Pix), TestJson.Options);
         Assert.Equal(HttpStatusCode.OK, pay.StatusCode);
         var payment = await pay.Content.ReadFromJsonAsync<PaymentResponseDto>(TestJson.Options);
         Assert.Equal(-59.06m, payment!.Adjustment);
         Assert.Equal(1122.19m, payment.AmountPaid);
 
-        // consultar mostra como paga
         var get = await client.GetFromJsonAsync<BookingResponseDto>($"/api/bookings/{booking.Id}", TestJson.Options);
         Assert.Equal(BookingStatus.Paid, get!.Status);
         Assert.NotNull(get.Payment);
 
-        // cancelar dentro de 24h do pagamento: reembolso integral
         var cancel = await client.PostAsync($"/api/bookings/{booking.Id}/cancel", null);
         Assert.Equal(HttpStatusCode.OK, cancel.StatusCode);
         var refund = await cancel.Content.ReadFromJsonAsync<CancellationResponseDto>(TestJson.Options);

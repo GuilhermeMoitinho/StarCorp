@@ -6,11 +6,10 @@ namespace StarCorp.UnitTests.Pricing;
 public class CancellationPolicyTests
 {
     private readonly CancellationPolicy _sut = new();
-    private const double OutsideWindow = 48d; // fora da janela de 24h apos o pagamento
+    private const double OutsideWindow = 48d;
 
     public static IEnumerable<object[]> PolicyMatrix =>
     [
-        // classe, dias ate a partida, percentual esperado
         [FareClass.Economica, 10d, 100m],
         [FareClass.Economica, 8d, 100m],
         [FareClass.Economica, 7d, 50m],
@@ -38,7 +37,6 @@ public class CancellationPolicyTests
     [Fact]
     public void CalculateRefund_Should_Refund_Full_Amount_Within_24h_Of_Payment()
     {
-        // Partida amanha cairia no bucket de 0%, mas a janela de 24h apos o pagamento garante 100%.
         var result = _sut.CalculateRefund(FareClass.Economica, daysUntilDeparture: 1d, paid: true, amountPaid: 614.25m, hoursSincePayment: 10d);
 
         Assert.Equal(100m, result.RefundPercentage);

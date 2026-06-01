@@ -12,7 +12,6 @@ public sealed class NotificationContext : INotificationContext
 
     public void AddNotification(string key, string message)
     {
-        // So vira validacao se nada mais especifico ja tiver sido sinalizado.
         if (Type == NotificationType.None)
             Type = NotificationType.Validation;
         _notifications.Add(new Notification(key, message));

@@ -40,7 +40,7 @@ public class FlightsEndpointTests(ApiFactory factory)
         var page = await response.Content.ReadFromJsonAsync<PagedResult<FlightOfferDto>>(TestJson.Options);
         var offer = Assert.Single(page!.Items);
         Assert.Equal(FareClass.Executiva, offer.FareClass);
-        Assert.Equal(2500.00m, offer.Price); // 1000 * 2.5
+        Assert.Equal(2500.00m, offer.Price);
     }
 
     [Fact]

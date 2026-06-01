@@ -3,7 +3,6 @@ using Microsoft.Data.SqlClient;
 
 namespace StarCorp.IntegrationTests;
 
-// Insere dados direto no banco para montar cenarios de teste deterministicos.
 internal static class TestData
 {
     public static async Task<int> InsertCustomerAsync(string connectionString, bool active = true)

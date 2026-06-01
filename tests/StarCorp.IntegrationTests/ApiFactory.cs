@@ -10,7 +10,6 @@ using Testcontainers.MsSql;
 
 namespace StarCorp.IntegrationTests;
 
-// Sobe um SQL Server real em container, aplica o schema.sql e levanta a API contra ele.
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly MsSqlContainer _db = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
@@ -22,8 +21,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseEnvironment("Testing");
 
-        // Troca a fabrica de conexao pela do container. ConfigureTestServices roda depois do registro da app,
-        // entao sobrepoe a connection string do appsettings sem depender de ordem de configuracao.
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IDbConnectionFactory>();

@@ -16,7 +16,6 @@ public static class DependencyInjectionConfig
 {
     public static IServiceCollection AddAppDependencies(this IServiceCollection services)
     {
-        // Scoped: service e controller compartilham a mesma instancia de notificacao por request.
         services.AddScoped<INotificationContext, NotificationContext>();
 
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -27,7 +26,6 @@ public static class DependencyInjectionConfig
         services.AddScoped<IFlightService, FlightService>();
         services.AddScoped<IBookingService, BookingService>();
 
-        // Calculadoras sao puras e sem estado.
         services.AddSingleton<IPricingCalculator, PricingCalculator>();
         services.AddSingleton<ICancellationPolicy, CancellationPolicy>();
         services.AddSingleton(TimeProvider.System);

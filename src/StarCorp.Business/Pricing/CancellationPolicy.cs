@@ -3,12 +3,6 @@ using StarCorp.Data.Enums;
 
 namespace StarCorp.Business.Pricing;
 
-/// Politica de cancelamento (secao 5.4):
-///                | > 7 dias | 2 a 7 dias | < 2 dias
-///   Economica    |   100%   |    50%     |    0%
-///   Executiva    |   100%   |    75%     |    25%
-/// Regra especial: cancelamento em ate 24h apos o pagamento reembolsa 100%, independente da tabela.
-/// Os dias sao medidos pela diferenca exata entre a partida e o instante do cancelamento (TimeSpan.TotalDays).
 public sealed class CancellationPolicy : ICancellationPolicy
 {
     private const double FullRefundWindowHours = 24d;
@@ -20,7 +14,6 @@ public sealed class CancellationPolicy : ICancellationPolicy
         decimal amountPaid,
         double? hoursSincePayment)
     {
-        // Reserva nao paga nao gera reembolso, apenas libera os assentos.
         if (!paid)
             return new RefundResult(0m, 0m);
 

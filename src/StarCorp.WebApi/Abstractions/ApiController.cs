@@ -10,7 +10,6 @@ public abstract class ApiController(INotificationContext notifications) : Contro
 {
     protected INotificationContext Notifications { get; } = notifications;
 
-    // Sem notificacao -> resposta de sucesso. Com notificacao -> status mapeado pelo tipo do erro.
     protected IActionResult Respond(object? payload = null, int successStatus = StatusCodes.Status200OK)
     {
         if (!Notifications.HasNotifications)

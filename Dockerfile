@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Restaura usando so os manifestos primeiro, aproveitando o cache de camadas.
 COPY StarCorp.slnx ./
 COPY src/StarCorp.WebApi/StarCorp.WebApi.csproj src/StarCorp.WebApi/
 COPY src/StarCorp.Business/StarCorp.Business.csproj src/StarCorp.Business/

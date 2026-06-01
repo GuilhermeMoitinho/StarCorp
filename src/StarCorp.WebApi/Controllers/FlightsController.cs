@@ -10,7 +10,6 @@ namespace StarCorp.WebApi.Controllers;
 public sealed class FlightsController(IFlightService flights, INotificationContext notifications)
     : ApiController(notifications)
 {
-    /// Busca voos com filtros opcionais (origem, destino, data, faixa de preco, classe) e paginacao.
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<FlightOfferDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search([FromQuery] FlightSearchRequest request, CancellationToken ct)

@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace StarCorp.IntegrationTests;
 
-// Mesma configuracao do JSON da API: camelCase e enums como string.
 internal static class TestJson
 {
     public static readonly JsonSerializerOptions Options = Build();

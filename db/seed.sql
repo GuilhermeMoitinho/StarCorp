@@ -1,5 +1,3 @@
--- StarCorp Travel: dados de exemplo para explorar a API. Idempotente.
--- Os voos usam datas relativas ao momento da carga, entao continuam no futuro a cada execucao.
 
 USE StarCorp;
 GO

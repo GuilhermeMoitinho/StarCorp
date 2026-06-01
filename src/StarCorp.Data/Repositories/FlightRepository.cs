@@ -20,7 +20,6 @@ public sealed class FlightRepository(IDbConnectionFactory factory) : IFlightRepo
 
     public async Task<PagedResult<FlightOfferRow>> SearchAsync(FlightSearchCriteria criteria, PageQuery page, CancellationToken ct)
     {
-        // O mesmo FROM/WHERE alimenta a contagem e a pagina, evitando duplicar a logica de filtros.
         const string fromAndWhere = @"
 FROM Flights f
 JOIN Airlines a ON a.Id = f.AirlineId

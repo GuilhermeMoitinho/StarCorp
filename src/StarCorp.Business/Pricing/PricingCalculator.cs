@@ -3,12 +3,6 @@ using StarCorp.Data.Enums;
 
 namespace StarCorp.Business.Pricing;
 
-/// Composicao do preco (secao 5.1 do enunciado):
-///   Subtotal   = preco base * multiplicador da classe * passageiros
-///   Impostos   = 8% do subtotal + R$ 45 fixos por passageiro
-///   Taxa serv. = 5% sobre o subtotal ja com impostos
-///   Total devido = subtotal + impostos + taxa de servico
-/// O ajuste do metodo de pagamento entra so na hora do pagamento (ApplyPayment), pois a reserva nasce sem metodo definido.
 public sealed class PricingCalculator : IPricingCalculator
 {
     private const decimal TaxRate = 0.08m;

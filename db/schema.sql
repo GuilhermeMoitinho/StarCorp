@@ -1,5 +1,3 @@
--- StarCorp Travel: schema do banco de reservas de passagens aereas (SQL Server).
--- Idempotente: roda varias vezes sem erro. Cria o database, as tabelas, indices e os dados de referencia.
 
 IF DB_ID('StarCorp') IS NULL
     CREATE DATABASE StarCorp;
@@ -133,7 +131,6 @@ CREATE TABLE dbo.Cancellations
 );
 GO
 
--- Dados de referencia: classes tarifarias e seus multiplicadores de preco (secao 5.2 do enunciado).
 IF NOT EXISTS (SELECT 1 FROM dbo.FareClasses)
     INSERT INTO dbo.FareClasses (Id, Name, PriceMultiplier)
     VALUES (1, 'Economica', 1.00), (2, 'Executiva', 2.50);

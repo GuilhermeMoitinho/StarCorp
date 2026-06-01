@@ -11,7 +11,6 @@ public static class MvcConfig
             .AddJsonOptions(options =>
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-        // Erros de binding (JSON malformado, tipo invalido) saem no mesmo formato dos erros de negocio.
         services.Configure<ApiBehaviorOptions>(options =>
         {
             options.InvalidModelStateResponseFactory = context =>

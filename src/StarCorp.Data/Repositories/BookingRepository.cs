@@ -15,7 +15,6 @@ public sealed class BookingRepository(IDbConnectionFactory factory) : IBookingRe
         await conn.OpenAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
-        // Baixa atomica: so reserva se ainda houver assentos suficientes na classe. Evita corrida sem lock manual.
         var seatsTaken = await conn.ExecuteAsync(new CommandDefinition(
             @"UPDATE FlightSeats
               SET SeatsAvailable = SeatsAvailable - @Count
@@ -100,7 +99,6 @@ SELECT Id, BookingId, RefundPercentage, RefundAmount, CancelledAt FROM Cancellat
         await conn.OpenAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
-        // Guarda contra corrida: so paga quem ainda esta pendente.
         var updated = await conn.ExecuteAsync(new CommandDefinition(
             "UPDATE Bookings SET Status = @Paid WHERE Id = @Id AND Status = @Pending;",
             new { Paid = (byte)BookingStatus.Paid, Id = bookingId, Pending = (byte)BookingStatus.Pending },
@@ -158,7 +156,6 @@ SELECT Id, BookingId, RefundPercentage, RefundAmount, CancelledAt FROM Cancellat
             new { BookingId = booking.Id, RefundPercentage = refundPercentage, RefundAmount = refundAmount, CancelledAt = cancelledAtUtc },
             tx, cancellationToken: ct));
 
-        // Devolve os assentos ao estoque da classe.
         await conn.ExecuteAsync(new CommandDefinition(
             @"UPDATE FlightSeats SET SeatsAvailable = SeatsAvailable + @Count
               WHERE FlightId = @FlightId AND FareClassId = @FareClassId;",

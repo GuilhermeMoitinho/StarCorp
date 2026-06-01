@@ -3,8 +3,6 @@ using Microsoft.Data.SqlClient;
 
 namespace StarCorp.Data.Setup;
 
-/// Roda os scripts de banco (schema e seed) numa conexao com o master, ja que o schema cria o proprio database.
-/// E o equivalente, em Dapper, ao MigrateAsync do EF: deixa o banco pronto no startup.
 public sealed partial class DatabaseBootstrapper(string connectionString, string scriptsDirectory)
 {
     public async Task EnsureCreatedAsync(bool seed, CancellationToken ct = default)
@@ -27,7 +25,6 @@ public sealed partial class DatabaseBootstrapper(string connectionString, string
         await using var conn = new SqlConnection(masterConnectionString);
         await OpenWithRetryAsync(conn, ct);
 
-        // O USE dentro do script muda o database corrente da conexao, entao os lotes seguintes rodam no destino.
         foreach (var batch in GoSeparator().Split(script))
         {
             if (string.IsNullOrWhiteSpace(batch))
@@ -40,7 +37,6 @@ public sealed partial class DatabaseBootstrapper(string connectionString, string
         }
     }
 
-    // O container do SQL Server pode demorar a aceitar conexoes; tenta algumas vezes antes de desistir.
     private static async Task OpenWithRetryAsync(SqlConnection conn, CancellationToken ct)
     {
         const int maxAttempts = 10;

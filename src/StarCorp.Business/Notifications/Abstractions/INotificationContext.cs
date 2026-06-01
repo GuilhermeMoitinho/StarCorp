@@ -1,6 +1,5 @@
 namespace StarCorp.Business.Notifications.Abstractions;
 
-// O valor inteiro de cada tipo e o proprio status HTTP, entao o controller mapeia direto.
 public enum NotificationType
 {
     None = 0,

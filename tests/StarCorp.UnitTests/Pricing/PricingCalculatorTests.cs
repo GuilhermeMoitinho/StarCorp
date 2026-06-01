@@ -14,8 +14,8 @@ public class PricingCalculatorTests
 
         Assert.Equal(500.00m, breakdown.FarePrice);
         Assert.Equal(500.00m, breakdown.Subtotal);
-        Assert.Equal(85.00m, breakdown.Taxes);       // 8% de 500 + 45 fixo
-        Assert.Equal(29.25m, breakdown.ServiceFee);  // 5% sobre 585
+        Assert.Equal(85.00m, breakdown.Taxes);
+        Assert.Equal(29.25m, breakdown.ServiceFee);
         Assert.Equal(614.25m, breakdown.AmountDue);
     }
 
@@ -25,8 +25,8 @@ public class PricingCalculatorTests
         var breakdown = _sut.Calculate(basePrice: 1000m, classMultiplier: 1.0m, passengers: 2);
 
         Assert.Equal(2000.00m, breakdown.Subtotal);
-        Assert.Equal(250.00m, breakdown.Taxes);      // 8% de 2000 + 45*2
-        Assert.Equal(112.50m, breakdown.ServiceFee); // 5% sobre 2250
+        Assert.Equal(250.00m, breakdown.Taxes);
+        Assert.Equal(112.50m, breakdown.ServiceFee);
         Assert.Equal(2362.50m, breakdown.AmountDue);
     }
 
@@ -46,7 +46,7 @@ public class PricingCalculatorTests
     {
         var charge = _sut.ApplyPayment(2362.50m, PaymentMethod.CreditCard);
 
-        Assert.Equal(70.88m, charge.Adjustment);   // 3% de 2362.50 = 70.875 -> 70.88
+        Assert.Equal(70.88m, charge.Adjustment);
         Assert.Equal(2433.38m, charge.Total);
     }
 
@@ -55,7 +55,7 @@ public class PricingCalculatorTests
     {
         var charge = _sut.ApplyPayment(2362.50m, PaymentMethod.Pix);
 
-        Assert.Equal(-118.13m, charge.Adjustment);  // -5% de 2362.50 = -118.125 -> -118.13
+        Assert.Equal(-118.13m, charge.Adjustment);
         Assert.Equal(2244.37m, charge.Total);
     }
 
@@ -64,7 +64,7 @@ public class PricingCalculatorTests
     {
         var charge = _sut.ApplyPayment(2362.50m, PaymentMethod.Boleto);
 
-        Assert.Equal(23.63m, charge.Adjustment);    // 1% de 2362.50 = 23.625 -> 23.63
+        Assert.Equal(23.63m, charge.Adjustment);
         Assert.Equal(2386.13m, charge.Total);
     }
 
