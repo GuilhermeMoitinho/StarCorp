@@ -1,4 +1,5 @@
 using StarCorp.WebApi.Configurations;
+using StarCorp.WebApi.Errors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,12 @@ builder.Services
     .AddAppDependencies()
     .AddAppHealthChecks();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
     app.UseAppSwagger();

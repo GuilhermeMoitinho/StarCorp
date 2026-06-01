@@ -15,8 +15,12 @@ public sealed class CreateBookingValidator : AbstractValidator<CreateBookingRequ
 
         RuleForEach(x => x.Passengers).ChildRules(passenger =>
         {
-            passenger.RuleFor(p => p.Name).NotEmpty().WithMessage("Nome do passageiro e obrigatorio.");
-            passenger.RuleFor(p => p.Document).NotEmpty().WithMessage("Documento do passageiro e obrigatorio.");
+            passenger.RuleFor(p => p.Name)
+                .NotEmpty().WithMessage("Nome do passageiro e obrigatorio.")
+                .MaximumLength(160).WithMessage("Nome do passageiro deve ter ate 160 caracteres.");
+            passenger.RuleFor(p => p.Document)
+                .NotEmpty().WithMessage("Documento do passageiro e obrigatorio.")
+                .MaximumLength(20).WithMessage("Documento do passageiro deve ter ate 20 caracteres.");
         });
     }
 }
