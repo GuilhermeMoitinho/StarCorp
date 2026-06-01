@@ -246,6 +246,8 @@ Status usados:
 
 A diferença entre 409 e 422: o 409 é quando o estado atual do recurso bloqueia a operação (a reserva já mudou de estado), enquanto o 422 é quando o pedido está bem formado e o recurso existe, mas uma regra de negócio impede processar.
 
+Qualquer exceção não prevista é capturada por um handler global e devolvida no mesmo envelope com status 500, então o cliente nunca recebe um stack trace cru.
+
 ## Decisões técnicas
 
 Algumas escolhas e interpretações que fiz, já que o enunciado deixa parte da modelagem em aberto:
@@ -270,6 +272,10 @@ Algumas escolhas e interpretações que fiz, já que o enunciado deixa parte da 
 
 * **Reserva não paga**: pode ser cancelada, só que sem reembolso, já que nada foi pago. Os assentos voltam ao estoque normalmente.
 
+* **Paginação normalizada**: page e pageSize fora da faixa são ajustados (page no mínimo 1, pageSize entre 1 e 100) em vez de gerar erro, por conveniência de quem consome. Os filtros de preço, esses sim, são validados e retornam 400.
+
+* **Reservar voo no passado**: fica fora de escopo. O seed sempre gera voos futuros, então não bloqueio a criação de reserva para um voo cuja partida já ocorreu.
+
 ## O que eu faria com mais tempo
 
 * Autenticação e autorização com JWT.
@@ -278,4 +284,5 @@ Algumas escolhas e interpretações que fiz, já que o enunciado deixa parte da 
 * Integração real com um provedor de pagamento, no lugar do cálculo do ajuste.
 * Logs estruturados com correlação de requisição e algumas métricas.
 * Pipeline de CI no GitHub Actions rodando build e testes a cada push.
-* Mais testes de borda e um teste de concorrência para a baixa de assentos.
+* Um teste de concorrência de verdade para a baixa de assentos sob disputa simultânea.
+* Um guard de 409 para reserva ou pagamento de voo cuja partida já passou.
