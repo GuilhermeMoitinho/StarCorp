@@ -17,23 +17,19 @@ Foi construída em .NET 10, com acesso a dados via Dapper sobre SQL Server, numa
 
 ## Arquitetura
 
-São três camadas, com a dependência apontando sempre numa direção só:
+São três camadas, com as dependências apontando para o núcleo. É uma inversão de dependência no estilo da Clean Architecture: a infraestrutura conhece o domínio, nunca o contrário.
 
 ```
-StarCorp.WebApi    apresentação e composition root
-      |
-      v
-StarCorp.Business  regras de negócio, serviços, validação, notificações
-      |
-      v
-StarCorp.Data      persistência com Dapper, entidades e paginação
+StarCorp.Business  núcleo: entidades, enums, regras de negócio e contratos de repositório
+StarCorp.Data      infraestrutura: implementações Dapper, conexão e bootstrap do banco
+StarCorp.WebApi    apresentação: controllers, injeção de dependência e Swagger
 ```
 
-* **WebApi**: controllers finos, configuração de injeção de dependência, Swagger e o mapeamento das notificações para status HTTP. Não tem regra de negócio, só recebe a requisição e chama o serviço.
-* **Business**: onde a lógica vive. Os cálculos de preço e de cancelamento ficam isolados em serviços puros, sem nenhuma dependência de banco, o que deixa as regras fáceis de testar e de auditar.
-* **Data**: repositórios com Dapper, a fábrica de conexão, as entidades (records imutáveis) e os modelos de leitura das consultas.
+* **Business** não depende de ninguém. Concentra as entidades, os enums, as regras (preço e cancelamento como serviços puros), as notificações, os DTOs e as interfaces de repositório.
+* **Data** depende de Business. Tem só as implementações Dapper dos repositórios, a fábrica de conexão e o bootstrap do schema.
+* **WebApi** depende de Business e de Data. Controllers finos, configuração e o mapeamento das notificações para status HTTP.
 
-Optei por três camadas em vez de uma Clean Architecture completa porque o domínio é objetivo: uma única fonte de dados e um conjunto de regras de cálculo bem definidas. Três camadas entregam a separação que importa sem cerimônia desnecessária, e é o formato que costumo usar nos meus projetos.
+As interfaces de repositório ficam no núcleo e as implementações na borda, então o domínio define o contrato e a infraestrutura o cumpre. É o D do SOLID na prática, e mantém as regras de negócio livres de qualquer detalhe de banco.
 
 ### Padrões aplicados
 
@@ -51,9 +47,9 @@ StarCorp/
     schema.sql        cria database, tabelas, índices e dados de referência
     seed.sql          dados de exemplo
   src/
+    StarCorp.Business/    núcleo: entidades, enums, regras, contratos de repositório, DTOs
+    StarCorp.Data/        infraestrutura: implementações Dapper, conexão, bootstrap
     StarCorp.WebApi/      controllers, configurações, Program, health check
-    StarCorp.Business/    serviços, DTOs, validações, pricing, notificações
-    StarCorp.Data/        conexão, entidades, repositórios Dapper, paginação
   tests/
     StarCorp.UnitTests/         regras de preço, cancelamento e notificações
     StarCorp.IntegrationTests/  endpoints contra um SQL Server real
@@ -154,7 +150,7 @@ Resposta (201) traz a reserva com o breakdown do cálculo:
   "passengerCount": 1,
   "passengers": [{ "name": "Ana Souza", "document": "11111111111" }],
   "breakdown": {
-    "farePricePerPassenger": 1000.00,
+    "farePrice": 1000.00,
     "passengers": 1,
     "subtotal": 1000.00,
     "taxes": 125.00,
@@ -248,13 +244,15 @@ Status usados:
 * **409** conflito de estado (sem assentos, reserva já paga, reserva já cancelada)
 * **422** regra de negócio violada (cliente inativo tentando reservar)
 
+A diferença entre 409 e 422: o 409 é quando o estado atual do recurso bloqueia a operação (a reserva já mudou de estado), enquanto o 422 é quando o pedido está bem formado e o recurso existe, mas uma regra de negócio impede processar.
+
 ## Decisões técnicas
 
 Algumas escolhas e interpretações que fiz, já que o enunciado deixa parte da modelagem em aberto:
 
 * **Dapper sem ORM**: os repositórios usam SQL parametrizado. A busca de voos monta o filtro dinâmico uma vez só e reaproveita o mesmo bloco para a contagem e para a página, num único round trip com `QueryMultiple`.
 
-* **Entidades como records, regras em serviços puros**: como o ORM é Dapper, deixei as entidades como records imutáveis mapeados por construtor. As regras de cálculo ficaram em serviços puros (`PricingCalculator` e `CancellationPolicy`), o que isola o negócio do banco e permite testar tudo sem infraestrutura.
+* **Entidades e contratos no núcleo, regras em serviços puros**: as entidades (records imutáveis mapeados por construtor), os enums e as interfaces de repositório ficam na Business, e a Data só implementa esses contratos. Assim a dependência aponta para dentro (a Data conhece a Business, nunca o contrário). As regras de cálculo ficam em serviços puros (`PricingCalculator` e `CancellationPolicy`), que testo sem qualquer infraestrutura.
 
 * **Modelagem das classes tarifárias**: não usei herança nem single table. A diferença entre Econômica e Executiva é dado (o multiplicador de preço, a quantidade de assentos) e comportamento (a política de cancelamento), não estrutura. Então modelei a classe como dado de referência na tabela `FareClasses`, com a disponibilidade por classe em `FlightSeats`. Fica mais simples de consultar e de evoluir.
 
