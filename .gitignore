@@ -1,0 +1,32 @@
+## Build do .NET
+bin/
+obj/
+out/
+artifacts/
+*.user
+*.suo
+*.userprefs
+.vs/
+
+## Resultados de teste
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+coverage*.json
+coverage*.xml
+
+## IDEs
+.idea/
+.vscode/
+
+## Segredos e config local (nunca versionar)
+.env
+.env.*
+*.env
+credentials.json
+secrets.json
+appsettings.*.local.json
+
+## Sistema operacional
+Thumbs.db
+.DS_Store
