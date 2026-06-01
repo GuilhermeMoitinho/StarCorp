@@ -11,10 +11,10 @@ public sealed class PricingCalculator : IPricingCalculator
 
     public PriceBreakdown Calculate(decimal basePrice, decimal classMultiplier, int passengers)
     {
-        var farePrice = Round(basePrice * classMultiplier);
-        var subtotal = Round(farePrice * passengers);
-        var taxes = Round(subtotal * TaxRate + FixedTaxPerPassenger * passengers);
-        var serviceFee = Round((subtotal + taxes) * ServiceFeeRate);
+        var farePrice = Money.Round(basePrice * classMultiplier);
+        var subtotal = Money.Round(farePrice * passengers);
+        var taxes = Money.Round(subtotal * TaxRate + FixedTaxPerPassenger * passengers);
+        var serviceFee = Money.Round((subtotal + taxes) * ServiceFeeRate);
         var amountDue = subtotal + taxes + serviceFee;
 
         return new PriceBreakdown(farePrice, passengers, subtotal, taxes, serviceFee, amountDue);
@@ -30,11 +30,9 @@ public sealed class PricingCalculator : IPricingCalculator
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Metodo de pagamento desconhecido.")
         };
 
-        var adjustment = Round(amountDue * rate);
+        var adjustment = Money.Round(amountDue * rate);
         var total = amountDue + adjustment;
 
         return new PaymentCharge(method, adjustment, total);
     }
-
-    private static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 }

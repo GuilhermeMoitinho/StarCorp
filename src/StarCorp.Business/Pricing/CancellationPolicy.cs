@@ -21,7 +21,7 @@ public sealed class CancellationPolicy : ICancellationPolicy
             return new RefundResult(100m, amountPaid);
 
         var percentage = PercentageFor(fareClass, daysUntilDeparture);
-        var refund = Math.Round(amountPaid * percentage / 100m, 2, MidpointRounding.AwayFromZero);
+        var refund = Money.Round(amountPaid * percentage / 100m);
         return new RefundResult(percentage, refund);
     }
 

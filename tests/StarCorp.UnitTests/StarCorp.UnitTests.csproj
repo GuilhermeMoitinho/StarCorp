@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\StarCorp.Business\StarCorp.Business.csproj" />
-    <ProjectReference Include="..\..\src\StarCorp.Data\StarCorp.Data.csproj" />
   </ItemGroup>
 
 </Project>

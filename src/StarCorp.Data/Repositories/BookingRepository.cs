@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Dapper;
 using StarCorp.Data.Connection;
 using StarCorp.Business.Entities;
@@ -10,58 +11,48 @@ namespace StarCorp.Data.Repositories;
 
 public sealed class BookingRepository(IDbConnectionFactory factory) : IBookingRepository
 {
-    public async Task<int?> CreateAsync(NewBooking booking, IReadOnlyList<NewPassenger> passengers, CancellationToken ct)
-    {
-        await using var conn = factory.Create();
-        await conn.OpenAsync(ct);
-        await using var tx = await conn.BeginTransactionAsync(ct);
-
-        var seatsTaken = await conn.ExecuteAsync(new CommandDefinition(
-            @"UPDATE FlightSeats
-              SET SeatsAvailable = SeatsAvailable - @Count
-              WHERE FlightId = @FlightId AND FareClassId = @FareClassId AND SeatsAvailable >= @Count;",
-            new { Count = booking.PassengerCount, booking.FlightId, FareClassId = (byte)booking.FareClassId },
-            tx, cancellationToken: ct));
-
-        if (seatsTaken == 0)
+    public Task<int?> CreateAsync(NewBooking booking, IReadOnlyList<NewPassenger> passengers, CancellationToken ct) =>
+        InTransactionAsync<int?>(async (conn, tx) =>
         {
-            await tx.RollbackAsync(ct);
-            return null;
-        }
+            var seatsTaken = await conn.ExecuteAsync(new CommandDefinition(
+                @"UPDATE FlightSeats
+                  SET SeatsAvailable = SeatsAvailable - @Count
+                  WHERE FlightId = @FlightId AND FareClassId = @FareClassId AND SeatsAvailable >= @Count;",
+                new { Count = booking.PassengerCount, booking.FlightId, FareClassId = (byte)booking.FareClassId },
+                tx, cancellationToken: ct));
 
-        var bookingId = await conn.ExecuteScalarAsync<int>(new CommandDefinition(
-            @"INSERT INTO Bookings
-                (CustomerId, FlightId, FareClassId, Status, PassengerCount, FarePrice, Subtotal, Taxes, ServiceFee, AmountDue, CreatedAt)
-              VALUES
-                (@CustomerId, @FlightId, @FareClassId, @Status, @PassengerCount, @FarePrice, @Subtotal, @Taxes, @ServiceFee, @AmountDue, @CreatedAt);
-              SELECT CAST(SCOPE_IDENTITY() AS INT);",
-            new
-            {
-                booking.CustomerId,
-                booking.FlightId,
-                FareClassId = (byte)booking.FareClassId,
-                Status = (byte)BookingStatus.Pending,
-                booking.PassengerCount,
-                booking.FarePrice,
-                booking.Subtotal,
-                booking.Taxes,
-                booking.ServiceFee,
-                booking.AmountDue,
-                CreatedAt = booking.CreatedAtUtc
-            },
-            tx, cancellationToken: ct));
+            if (seatsTaken == 0)
+                return null;
 
-        if (passengers.Count > 0)
-        {
+            var bookingId = await conn.ExecuteScalarAsync<int>(new CommandDefinition(
+                @"INSERT INTO Bookings
+                    (CustomerId, FlightId, FareClassId, Status, PassengerCount, FarePrice, Subtotal, Taxes, ServiceFee, AmountDue, CreatedAt)
+                  VALUES
+                    (@CustomerId, @FlightId, @FareClassId, @Status, @PassengerCount, @FarePrice, @Subtotal, @Taxes, @ServiceFee, @AmountDue, @CreatedAt);
+                  SELECT CAST(SCOPE_IDENTITY() AS INT);",
+                new
+                {
+                    booking.CustomerId,
+                    booking.FlightId,
+                    FareClassId = (byte)booking.FareClassId,
+                    Status = (byte)BookingStatus.Pending,
+                    booking.PassengerCount,
+                    booking.FarePrice,
+                    booking.Subtotal,
+                    booking.Taxes,
+                    booking.ServiceFee,
+                    booking.AmountDue,
+                    CreatedAt = booking.CreatedAtUtc
+                },
+                tx, cancellationToken: ct));
+
             await conn.ExecuteAsync(new CommandDefinition(
                 "INSERT INTO BookingPassengers (BookingId, Name, Document) VALUES (@BookingId, @Name, @Document);",
                 passengers.Select(p => new { BookingId = bookingId, p.Name, p.Document }),
                 tx, cancellationToken: ct));
-        }
 
-        await tx.CommitAsync(ct);
-        return bookingId;
-    }
+            return bookingId;
+        }, ct);
 
     public async Task<BookingAggregate?> GetAggregateAsync(int id, CancellationToken ct)
     {
@@ -74,9 +65,7 @@ FROM Flights f JOIN Bookings b ON b.FlightId = f.Id WHERE b.Id = @id;
 
 SELECT Id, BookingId, Name, Document FROM BookingPassengers WHERE BookingId = @id ORDER BY Id;
 
-SELECT Id, BookingId, Method, Adjustment, AmountPaid, PaidAt FROM Payments WHERE BookingId = @id;
-
-SELECT Id, BookingId, RefundPercentage, RefundAmount, CancelledAt FROM Cancellations WHERE BookingId = @id;";
+SELECT Id, BookingId, Method, Adjustment, AmountPaid, PaidAt FROM Payments WHERE BookingId = @id;";
 
         await using var conn = factory.Create();
         await conn.OpenAsync(ct);
@@ -89,81 +78,84 @@ SELECT Id, BookingId, RefundPercentage, RefundAmount, CancelledAt FROM Cancellat
         var flight = await multi.ReadSingleAsync<Flight>();
         var passengers = (await multi.ReadAsync<BookingPassenger>()).ToList();
         var payment = await multi.ReadSingleOrDefaultAsync<Payment>();
-        var cancellation = await multi.ReadSingleOrDefaultAsync<Cancellation>();
 
-        return new BookingAggregate(booking, flight, passengers, payment, cancellation);
+        return new BookingAggregate(booking, flight, passengers, payment);
     }
 
-    public async Task<bool> RegisterPaymentAsync(int bookingId, NewPayment payment, CancellationToken ct)
+    public Task<bool> RegisterPaymentAsync(int bookingId, NewPayment payment, CancellationToken ct) =>
+        InTransactionAsync(async (conn, tx) =>
+        {
+            var updated = await conn.ExecuteAsync(new CommandDefinition(
+                "UPDATE Bookings SET Status = @Paid WHERE Id = @Id AND Status = @Pending;",
+                new { Paid = (byte)BookingStatus.Paid, Id = bookingId, Pending = (byte)BookingStatus.Pending },
+                tx, cancellationToken: ct));
+
+            if (updated == 0)
+                return false;
+
+            await conn.ExecuteAsync(new CommandDefinition(
+                @"INSERT INTO Payments (BookingId, Method, Adjustment, AmountPaid, PaidAt)
+                  VALUES (@BookingId, @Method, @Adjustment, @AmountPaid, @PaidAt);",
+                new
+                {
+                    BookingId = bookingId,
+                    Method = (byte)payment.Method,
+                    payment.Adjustment,
+                    payment.AmountPaid,
+                    PaidAt = payment.PaidAtUtc
+                },
+                tx, cancellationToken: ct));
+
+            return true;
+        }, ct);
+
+    public Task<bool> CancelAsync(Booking booking, decimal refundPercentage, decimal refundAmount, DateTime cancelledAtUtc, CancellationToken ct) =>
+        InTransactionAsync(async (conn, tx) =>
+        {
+            var updated = await conn.ExecuteAsync(new CommandDefinition(
+                "UPDATE Bookings SET Status = @Cancelled WHERE Id = @Id AND Status IN (@Pending, @Paid);",
+                new
+                {
+                    Cancelled = (byte)BookingStatus.Cancelled,
+                    Id = booking.Id,
+                    Pending = (byte)BookingStatus.Pending,
+                    Paid = (byte)BookingStatus.Paid
+                },
+                tx, cancellationToken: ct));
+
+            if (updated == 0)
+                return false;
+
+            await conn.ExecuteAsync(new CommandDefinition(
+                @"INSERT INTO Cancellations (BookingId, RefundPercentage, RefundAmount, CancelledAt)
+                  VALUES (@BookingId, @RefundPercentage, @RefundAmount, @CancelledAt);",
+                new { BookingId = booking.Id, RefundPercentage = refundPercentage, RefundAmount = refundAmount, CancelledAt = cancelledAtUtc },
+                tx, cancellationToken: ct));
+
+            await conn.ExecuteAsync(new CommandDefinition(
+                @"UPDATE FlightSeats SET SeatsAvailable = SeatsAvailable + @Count
+                  WHERE FlightId = @FlightId AND FareClassId = @FareClassId;",
+                new { Count = booking.PassengerCount, booking.FlightId, FareClassId = (byte)booking.FareClassId },
+                tx, cancellationToken: ct));
+
+            return true;
+        }, ct);
+
+    private async Task<T> InTransactionAsync<T>(Func<DbConnection, DbTransaction, Task<T>> action, CancellationToken ct)
     {
         await using var conn = factory.Create();
         await conn.OpenAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
-
-        var updated = await conn.ExecuteAsync(new CommandDefinition(
-            "UPDATE Bookings SET Status = @Paid WHERE Id = @Id AND Status = @Pending;",
-            new { Paid = (byte)BookingStatus.Paid, Id = bookingId, Pending = (byte)BookingStatus.Pending },
-            tx, cancellationToken: ct));
-
-        if (updated == 0)
+        try
+        {
+            var result = await action(conn, tx);
+            await tx.CommitAsync(ct);
+            return result;
+        }
+        catch
         {
             await tx.RollbackAsync(ct);
-            return false;
+            throw;
         }
-
-        await conn.ExecuteAsync(new CommandDefinition(
-            @"INSERT INTO Payments (BookingId, Method, Adjustment, AmountPaid, PaidAt)
-              VALUES (@BookingId, @Method, @Adjustment, @AmountPaid, @PaidAt);",
-            new
-            {
-                BookingId = bookingId,
-                Method = (byte)payment.Method,
-                payment.Adjustment,
-                payment.AmountPaid,
-                PaidAt = payment.PaidAtUtc
-            },
-            tx, cancellationToken: ct));
-
-        await tx.CommitAsync(ct);
-        return true;
-    }
-
-    public async Task<bool> CancelAsync(Booking booking, decimal refundPercentage, decimal refundAmount, DateTime cancelledAtUtc, CancellationToken ct)
-    {
-        await using var conn = factory.Create();
-        await conn.OpenAsync(ct);
-        await using var tx = await conn.BeginTransactionAsync(ct);
-
-        var updated = await conn.ExecuteAsync(new CommandDefinition(
-            "UPDATE Bookings SET Status = @Cancelled WHERE Id = @Id AND Status IN (@Pending, @Paid);",
-            new
-            {
-                Cancelled = (byte)BookingStatus.Cancelled,
-                Id = booking.Id,
-                Pending = (byte)BookingStatus.Pending,
-                Paid = (byte)BookingStatus.Paid
-            },
-            tx, cancellationToken: ct));
-
-        if (updated == 0)
-        {
-            await tx.RollbackAsync(ct);
-            return false;
-        }
-
-        await conn.ExecuteAsync(new CommandDefinition(
-            @"INSERT INTO Cancellations (BookingId, RefundPercentage, RefundAmount, CancelledAt)
-              VALUES (@BookingId, @RefundPercentage, @RefundAmount, @CancelledAt);",
-            new { BookingId = booking.Id, RefundPercentage = refundPercentage, RefundAmount = refundAmount, CancelledAt = cancelledAtUtc },
-            tx, cancellationToken: ct));
-
-        await conn.ExecuteAsync(new CommandDefinition(
-            @"UPDATE FlightSeats SET SeatsAvailable = SeatsAvailable + @Count
-              WHERE FlightId = @FlightId AND FareClassId = @FareClassId;",
-            new { Count = booking.PassengerCount, booking.FlightId, FareClassId = (byte)booking.FareClassId },
-            tx, cancellationToken: ct));
-
-        await tx.CommitAsync(ct);
-        return true;
     }
 }
